@@ -1,3 +1,6 @@
+import os
+import json
+import numpy as np
 ##pip install audd
 from audd import AudD
 token = "9d982366f7e755b54a99017d2757a677"
@@ -11,7 +14,3 @@ def recognize_song(file_path):
         return result.artist, result.title
     else:
         return "nem talalhato"
-
-    
-result = recognize_song("sample.mp3")
-print(result)
