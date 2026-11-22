@@ -1,0 +1,11 @@
+# Gemini valtozat (Windowson is megy)
+google-genai
+pydantic
+
+# Csapat valtozat (AudD + Groq)
+audd
+openai
+numpy
+
+# Essentia - csak Linux / macOS / WSL alatt telepitheto!
+essentia-tensorflow; sys_platform != "win32"

@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+models/
+.env
+.venv/
+venv/
+api_key.txt
