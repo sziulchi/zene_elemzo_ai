@@ -132,17 +132,83 @@ def extract_features(hangfajl):
     return {mezo: adatok[mezo] for mezo in mezok if mezo in adatok}
 
 
+DALLISTA = {
+    "1": ("AURORA", "Cure For Me", "electropop"),
+    "2": ("CHVRCHES", "The Mother We Share", "synth-pop"),
+    "3": ("M83", "Midnight City", "dreamy synth-pop"),
+    "4": ("The Weeknd", "Blinding Lights", "upbeat synth-pop"),
+    "5": ("Daft Punk", "One More Time", "dance and house"),
+    "6": ("Paramore", "Hard Times", "pop rock and new wave"),
+    "7": ("Mr. Fingers", "Can You Feel It", "deep house"),
+    "8": ("Nora En Pure", "Come With Me", "deep house"),
+    "9": ("Kerri Chandler", "Bar A Thym", "deep house"),
+}
+
+
 def mufaj_es_ajanlas(tulajdonsagok):
-    kerdes = (
-        "Use only the musical properties below. Return one JSON object in English "
-        'with keys "mufaj", "leiras", and "hasonlo_zenek". '
-        '"mufaj" is the most likely genre. '
-        '"leiras" is a brief description of the tempo, rhythm, instruments and mood. '
-        '"hasonlo_zenek" is a list of three released songs, each with '
-        '"eloado" (artist), "cim" (title), and "indoklas" (why it sounds similar).'
-        "\n\n" + json.dumps(tulajdonsagok, ensure_ascii=False)
+    jellemzok = json.dumps(tulajdonsagok, ensure_ascii=False)
+    eredmeny = szotar_beolvasasa(kerdezd_flamingot(
+        "Use only the musical properties below. Return one JSON object "
+        'with "mufaj" for the most likely genre and "leiras" '
+        "for a short English description of the audible properties."
+        "\n\n" + jellemzok
+    ))
+
+    mufaj = str(eredmeny["mufaj"]).casefold().replace("-", " ")
+    house_mufaj = "house" in mufaj or "mély ház" in mufaj
+    jelolt_dalok = DALLISTA
+
+    if house_mufaj:
+        jelolt_dalok = {
+            azonosito: dal
+            for azonosito, dal in DALLISTA.items()
+            if dal[2] == "deep house"
+        }
+
+    print(f"Választható dalok: {', '.join(jelolt_dalok)}", flush=True)
+    jeloltek = "\n".join(
+        f"{azonosito}. {eloado} - {cim} ({stilus})"
+        for azonosito, (eloado, cim, stilus) in jelolt_dalok.items()
     )
-    return szotar_beolvasasa(kerdezd_flamingot(kerdes))
+    nyers_valasz = kerdezd_flamingot(
+        "Pick up to three distinct tracks from the supplied catalogue. "
+        'Return only JSON with an "ajanlasok" list. Each item must contain '
+        '"id", a number from the supplied catalogue, and "indoklas", '
+        "a short English reason based on the musical properties."
+        f"\n\nMusical properties:\n{jellemzok}"
+        f"\n\nCatalogue:\n{jeloltek}"
+    )
+    try:
+        ajanlasok = szotar_beolvasasa(nyers_valasz).get("ajanlasok")
+    except RuntimeError:
+        ajanlasok = []
+
+    hasonlo_zenek = []
+    hasznalt = set()
+    if isinstance(ajanlasok, list):
+        for ajanlas in ajanlasok:
+            if not isinstance(ajanlas, dict):
+                continue
+            azonosito = str(ajanlas.get("id", "")).strip()
+            if azonosito in jelolt_dalok and azonosito not in hasznalt:
+                eloado, cim, _ = jelolt_dalok[azonosito]
+                hasonlo_zenek.append({
+                    "eloado": eloado,
+                    "cim": cim,
+                    "indoklas": ajanlas.get("indoklas") or "Selected by the model.",
+                })
+                hasznalt.add(azonosito)
+
+    if not hasonlo_zenek and house_mufaj:
+        for eloado, cim, _ in jelolt_dalok.values():
+            hasonlo_zenek.append({
+                "eloado": eloado,
+                "cim": cim,
+                "indoklas": "This track matches the estimated house genre.",
+            })
+
+    eredmeny["hasonlo_zenek"] = hasonlo_zenek[:3]
+    return eredmeny
 
 
 def magyarra(ertek):
