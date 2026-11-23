@@ -6,17 +6,14 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
-MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
-# a kulcs az api_key.txt fajlban van (a git nem tolti fel, lasd .gitignore)
-# ha be van allitva a GEMINI_API_KEY kornyezeti valtozo, az felulirja
+
 KEY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "api_key.txt")
 
 _client = None
-_uploaded = {}  # fajl utvonal -> feltoltott Gemini fajl (hogy ne toltsuk fel tobbszor)
+_uploaded = {}  
 
-
-# valasz-semak (a gemini ezek szerint ad vissza json-t)
 
 class SongInfo(BaseModel):
     cim: str = Field(description="A dal cime, vagy 'ismeretlen'")
@@ -81,7 +78,6 @@ def get_client():
 
 
 def upload_audio(file_path):
-    """Feltolti az mp3-at a Gemini Files API-ra (csak egyszer fajlonkent)."""
     if file_path in _uploaded:
         return _uploaded[file_path]
     client = get_client()
@@ -97,7 +93,6 @@ def upload_audio(file_path):
 
 
 def _ask(contents, schema, temperature=0.4):
-    """Egy kulon (elozmeny nelkuli) keres a Geminihez, JSON valasszal."""
     response = get_client().models.generate_content(
         model=MODEL,
         contents=contents,
@@ -110,10 +105,9 @@ def _ask(contents, schema, temperature=0.4):
     return json.loads(response.text)
 
 
-# Fo fuggvenyek
+# Fo fv
 
 def recognize_song(file_path):
-    """1. lepes: felismeri a zenet (cim, eloado, album, ev)."""
     audio = upload_audio(file_path)
     prompt = (
         "Hallgasd meg ezt a hangfelvetelt, es probald felismerni, melyik dal ez. "
@@ -125,7 +119,6 @@ def recognize_song(file_path):
 
 
 def extract_features(file_path):
-    """2. lepes: kiveszi a zene nyers tulajdonsagait (mufaj megnevezese NELKUL)."""
     audio = upload_audio(file_path)
     prompt = (
         "Elemezd ezt a zenet tisztan zeneileg, mint egy hangmernok. "
@@ -138,11 +131,6 @@ def extract_features(file_path):
 
 
 def guess_genre(features):
-    """3. lepes: CSAK a tulajdonsagokbol talalja ki a mufajt.
-
-    Kulon keres, chat elozmeny es hangfajl nelkul, hogy a modell ne
-    a felismert dalcimbol 'csaljon'.
-    """
     prompt = (
         "Egy zeneszamrol az alabbi tulajdonsagokat mertuk ki. A dalt nem ismered, "
         "csak ezeket az adatokat latod. Ezek alapjan tippeld meg a mufajat: "
@@ -154,7 +142,6 @@ def guess_genre(features):
 
 
 def describe_song(features, genre=None):
-    """Szoveges, kozertheto leiras a zene tulajdonsagairol (magyarul)."""
     prompt = (
         "Az alabbi adatok egy zeneszam kimert tulajdonsagai. Irj rola egy rovid "
         "(5-8 mondatos), kozertheto, magyar nyelvu leirast: milyen a hangulata, "
@@ -168,7 +155,6 @@ def describe_song(features, genre=None):
 
 
 def similar_songs(features, genre=None, n=3, exclude=None):
-    """4. lepes: hasonlo zenek ajanlasa a tulajdonsagok (es a mufaj) alapjan."""
     prompt = (
         f"Ajanlj {n} letezo, ismert zeneszamot, amelyek hasonlitanak egy olyan "
         "zenere, aminek az alabbiak a tulajdonsagai. Csak valodi dalokat irj, "
@@ -183,7 +169,6 @@ def similar_songs(features, genre=None, n=3, exclude=None):
 
 
 def analyze(file_path, n_similar=3):
-    """A teljes folyamat egyben: felismeres -> tulajdonsagok -> mufaj -> leiras -> hasonlok."""
     def step(msg):
         print(msg, flush=True)
 

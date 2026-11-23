@@ -1,10 +1,3 @@
-"""Az Essentia + Groq + AudD alapu valtozat.
-
-A modulok csak akkor toltodnek be, amikor tenylegesen hasznaljuk oket,
-igy a hianyzo csomagok (pl. essentia Windowson) nem okoznak hibat importkor.
-"""
-
-
 def recognize_song(file_path):
     from .team1 import recognize_song as _rs
     return _rs(file_path)

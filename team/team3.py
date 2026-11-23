@@ -1,8 +1,4 @@
-"""Mufaj-tippeles es ajanlas a Groq (gpt-oss-120b) LLM-mel az Essentia tulajdonsagokbol.
 
-Telepites:  pip install openai
-API kulcs:  GROQ_API_KEY kornyezeti valtozo (https://console.groq.com/keys)
-"""
 import json
 import os
 
@@ -13,7 +9,6 @@ SYSTEM_PROMPT = (
 
 
 def ask_llm(result, model="openai/gpt-oss-120b"):
-    """A team2.analyze() eredmenyet (dict) kuldi el az LLM-nek, szoveget ad vissza."""
     from openai import OpenAI
 
     api_key = os.environ.get("GROQ_API_KEY")

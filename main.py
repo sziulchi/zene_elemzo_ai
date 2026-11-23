@@ -1,21 +1,13 @@
-"""Zene elemzo AI - belepesi pont.
 
-Hasznalat:
-    python main.py                          -> Gemini, sample/sample1.mp3
-    python main.py zene.mp3                 -> Gemini, sajat fajl
-    python main.py zene.mp3 --mod essentia  -> AudD + Essentia + Groq (csapat valtozat)
-    python main.py zene.mp3 --json          -> nyers JSON kimenet
-"""
 import argparse
 import json
 import os
 import sys
 
-# hogy barhonnan inditva megtalalja a gemini.py-t es a team csomagot
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.getcwd())
 
-# Windows konzolon az ekezetes karakterek miatt
+
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:
@@ -24,27 +16,27 @@ except Exception:
 
 def print_gemini(result):
     dal = result["dal"]
-    print("\n=== FELISMERT DAL ===")
+    print("\nA zene:")
     if dal["cim"] == "ismeretlen":
         print("Nem sikerult biztosan felismerni.")
     else:
         print(f'{dal["eloado"]} - {dal["cim"]}  ({dal["album"]}, {dal["megjelenes_eve"]})'
               f'  [biztonsag: {dal["biztonsag"]:.0%}]')
 
-    print("\n=== TULAJDONSAGOK ===")
+    print("\nTulajdonsagai:")
     for k, v in result["tulajdonsagok"].items():
         if isinstance(v, list):
             v = ", ".join(v)
         print(f"  {k:14}: {v}")
 
-    print("\n=== MUFAJ TIPPEK (csak a tulajdonsagok alapjan) ===")
+    print("\nMufaj becslesek:")
     for i, t in enumerate(result["mufaj_tippek"], 1):
         print(f'  {i}. {t["mufaj"]} ({t["valoszinuseg"]:.0%}) - {t["indoklas"]}')
 
-    print("\n=== LEIRAS ===")
+    print("\nLeiras")
     print(result["leiras"])
 
-    print("\n=== HASONLO ZENEK ===")
+    print("\nHasonlo zenek:")
     for s in result["hasonlo_zenek"]:
         print(f'  - {s["eloado"]} - {s["cim"]}: {s["miert_hasonlo"]}')
 
@@ -60,12 +52,12 @@ def run_gemini(path, as_json):
 
 def run_essentia(path):
     import team
-    print("=== FELISMERES (AudD) ===")
-    print(team.recognize_song(path) or "nem talalhato")
-    print("\n=== TULAJDONSAGOK (Essentia) ===")
+    print("Zene cime (AudD):")
+    print(team.recognize_song(path))
+    print("\nTulajdonsagai: (Essentia):")
     features = team.analyze(path)
     print(json.dumps(features, indent=2, ensure_ascii=False))
-    print("\n=== MUFAJ + AJANLAS (Groq) ===")
+    print("\nMufaj es ajanlasok (Groq):")
     print(team.ask_llm(features))
 
 
@@ -83,8 +75,10 @@ def main():
     try:
         if args.mod == "gemini":
             run_gemini(args.file, args.json)
+            run_essentia("sample/sample1.mp3")
         else:
             run_essentia(args.file)
+            print("?")
     except ModuleNotFoundError as e:
         sys.exit(f"Hianyzo csomag: {e.name}  ->  pip install -r requirements.txt")
     except RuntimeError as e:

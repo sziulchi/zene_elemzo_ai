@@ -1,10 +1,4 @@
-"""Zenei tulajdonsagok kinyerese Essentia + TensorFlow modellekkel.
 
-Telepites:  pip install essentia-tensorflow
-FIGYELEM:   az essentia-tensorflow csak Linuxon / macOS-en telepitheto,
-            Windowson WSL-ben (vagy Colabban) futtasd!
-A modellek elso futaskor letoltodnek a projekt 'models' mappajaba.
-"""
 import json
 import os
 import urllib.request
